@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -133,9 +134,11 @@ export default function Index() {
             <button onClick={() => scrollTo('faq')} className="hover:text-primary transition-colors">Вопросы</button>
             <button onClick={() => scrollTo('contacts')} className="hover:text-primary transition-colors">Контакты</button>
           </nav>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Icon name="User" size={16} />
-            Кабинет
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to="/login">
+              <Icon name="User" size={16} />
+              Кабинет
+            </Link>
           </Button>
         </div>
       </header>
