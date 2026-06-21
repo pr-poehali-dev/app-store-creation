@@ -124,7 +124,7 @@ export default function Index() {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-9 w-9 object-contain" />
+            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-9 w-9 object-contain mix-blend-multiply" />
             <span className="font-display text-2xl font-bold tracking-tight">
               tut_vkusnoru
             </span>
@@ -344,11 +344,15 @@ export default function Index() {
             Напишите нам — поможем выбрать курс и расскажем о доступе
           </p>
           <div className="flex flex-wrap justify-center gap-4 relative">
-            <Button size="lg" variant="secondary" className="gap-2 h-12">
-              <Icon name="Send" size={18} /> Telegram
+            <Button asChild size="lg" variant="secondary" className="gap-2 h-12">
+              <a href="https://t.me/vkusno_ruu" target="_blank" rel="noopener noreferrer">
+                <Icon name="Send" size={18} /> @vkusno_ruu
+              </a>
             </Button>
-            <Button size="lg" variant="secondary" className="gap-2 h-12">
-              <Icon name="Mail" size={18} /> hello@gotovim.ru
+            <Button asChild size="lg" variant="secondary" className="gap-2 h-12">
+              <a href="mailto:cartel.psixolog@gmail.com">
+                <Icon name="Mail" size={18} /> cartel.psixolog@gmail.com
+              </a>
             </Button>
           </div>
         </div>
@@ -358,7 +362,7 @@ export default function Index() {
       <footer className="border-t border-border">
         <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-7 w-7 object-contain" />
+            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-7 w-7 object-contain mix-blend-multiply" />
             <span className="font-display text-lg font-semibold text-foreground">tut_vkusnoru</span>
           </div>
           <span>© 2026 Все права защищены</span>

@@ -27,7 +27,7 @@ export default function Login() {
 
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
-          <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-14 w-14 object-contain mx-auto mb-3" />
+          <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-14 w-14 object-contain mx-auto mb-3 mix-blend-multiply" />
           <h1 className="font-display text-4xl font-semibold mb-2">Вход в кабинет</h1>
           <p className="text-muted-foreground">Доступ к вашим курсам и управлению</p>
         </div>
