@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -12,51 +11,90 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { api } from '@/lib/api';
 
-interface AdminCourse {
+interface BuyerUser {
+  id: number;
+  email: string;
+  created_at: string;
+  courses_count: number;
+}
+
+interface Course {
   id: number;
   title: string;
+  emoji: string;
   category: string;
   price: number;
   lessons: number;
-  emoji: string;
-  desc: string;
 }
 
-const INITIAL: AdminCourse[] = [
-  { id: 1, title: 'Как готовить с нуля, если ты новичок', category: 'Для новичков', price: 2990, lessons: 6, emoji: '🍳', desc: '6 базовых блюд с подробными видеоуроками.' },
-  { id: 2, title: 'Идеальные завтраки за 15 минут', category: 'Завтраки', price: 1990, lessons: 8, emoji: '🥞', desc: 'Быстрые и полезные завтраки на каждый день.' },
-  { id: 3, title: 'Горячие блюда уровня ресторана', category: 'Горячее', price: 3990, lessons: 10, emoji: '🍲', desc: 'Стейки, рагу, запечённая рыба и гарниры.' },
-  { id: 4, title: 'Десерты, которые впечатлят гостей', category: 'Десерты', price: 3490, lessons: 7, emoji: '🍰', desc: 'Чизкейки, тарты, муссовые торты и мороженое.' },
-];
-
-const empty: AdminCourse = { id: 0, title: '', category: '', price: 0, lessons: 0, emoji: '🍽️', desc: '' };
-
 export default function Admin() {
-  const [courses, setCourses] = useState<AdminCourse[]>(INITIAL);
-  const [editing, setEditing] = useState<AdminCourse | null>(null);
-  const [confirmDel, setConfirmDel] = useState<AdminCourse | null>(null);
+  const navigate = useNavigate();
+  const [users, setUsers] = useState<BuyerUser[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'users' | 'courses'>('users');
 
-  const stats = [
-    ['BookOpen', courses.length, 'курсов'],
-    ['Users', '1 248', 'учеников'],
-    ['Wallet', '3.7 млн ₽', 'выручка'],
-  ] as const;
+  // Создание пользователя
+  const [newUser, setNewUser] = useState({ email: '', password: '' });
+  const [newUserOpen, setNewUserOpen] = useState(false);
+  const [newUserLoading, setNewUserLoading] = useState(false);
+  const [newUserError, setNewUserError] = useState('');
 
-  const save = () => {
-    if (!editing) return;
-    if (editing.id === 0) {
-      setCourses([...courses, { ...editing, id: Date.now() }]);
-    } else {
-      setCourses(courses.map((c) => (c.id === editing.id ? editing : c)));
-    }
-    setEditing(null);
+  // Выдача доступа
+  const [grantOpen, setGrantOpen] = useState<BuyerUser | null>(null);
+  const [grantCourse, setGrantCourse] = useState('');
+  const [grantLoading, setGrantLoading] = useState(false);
+  const [grantMsg, setGrantMsg] = useState('');
+
+  const user = api.auth.getUser();
+
+  useEffect(() => {
+    if (!user || user.role !== 'admin') { navigate('/login'); return; }
+    Promise.all([api.courses.users(), api.courses.list()])
+      .then(([u, c]) => { setUsers(u); setCourses(c); })
+      .catch(() => navigate('/login'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleLogout = async () => {
+    await api.auth.logout();
+    navigate('/');
   };
 
-  const remove = () => {
-    if (!confirmDel) return;
-    setCourses(courses.filter((c) => c.id !== confirmDel.id));
-    setConfirmDel(null);
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewUserError('');
+    setNewUserLoading(true);
+    try {
+      await api.courses.createUser(newUser.email, newUser.password);
+      const updated = await api.courses.users();
+      setUsers(updated);
+      setNewUserOpen(false);
+      setNewUser({ email: '', password: '' });
+    } catch (err: unknown) {
+      setNewUserError(err instanceof Error ? err.message : 'Ошибка');
+    } finally {
+      setNewUserLoading(false);
+    }
+  };
+
+  const handleGrant = async () => {
+    if (!grantOpen || !grantCourse) return;
+    setGrantLoading(true);
+    setGrantMsg('');
+    try {
+      await api.courses.grant(grantOpen.email, Number(grantCourse));
+      const updated = await api.courses.users();
+      setUsers(updated);
+      setGrantMsg('Доступ выдан!');
+      setTimeout(() => { setGrantOpen(null); setGrantMsg(''); setGrantCourse(''); }, 1000);
+    } catch (err: unknown) {
+      setGrantMsg(err instanceof Error ? err.message : 'Ошибка');
+    } finally {
+      setGrantLoading(false);
+    }
   };
 
   return (
@@ -64,12 +102,16 @@ export default function Admin() {
       <header className="border-b border-border bg-card">
         <div className="container flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
-            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-9 w-9 object-contain mix-blend-multiply" />
+            <img
+              src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg"
+              alt="tut_vkusnoru"
+              className="h-9 w-9 object-contain mix-blend-multiply"
+            />
             <span className="font-display text-xl font-bold tracking-tight">tut_vkusnoru</span>
             <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">Админ</span>
           </Link>
-          <Button asChild variant="outline" size="sm" className="gap-2">
-            <Link to="/login"><Icon name="LogOut" size={16} />Выйти</Link>
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleLogout}>
+            <Icon name="LogOut" size={16} />Выйти
           </Button>
         </div>
       </header>
@@ -77,17 +119,18 @@ export default function Admin() {
       <main className="container py-10">
         <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
           <div>
-            <h1 className="font-display text-4xl font-semibold mb-1">Управление курсами</h1>
-            <p className="text-muted-foreground">Добавляйте, редактируйте и удаляйте курсы</p>
+            <h1 className="font-display text-4xl font-semibold mb-1">Панель администратора</h1>
+            <p className="text-muted-foreground">Управление покупателями и курсами</p>
           </div>
-          <Button size="lg" className="gap-2" onClick={() => setEditing({ ...empty })}>
-            <Icon name="Plus" size={18} />Добавить курс
-          </Button>
         </div>
 
         {/* STATS */}
-        <div className="grid sm:grid-cols-3 gap-4 mb-10">
-          {stats.map(([icon, value, label]) => (
+        <div className="grid sm:grid-cols-3 gap-4 mb-8">
+          {[
+            ['BookOpen', String(courses.length), 'курсов'],
+            ['Users', String(users.length), 'покупателей'],
+            ['GraduationCap', String(users.reduce((s, u) => s + u.courses_count, 0)), 'выданных доступов'],
+          ].map(([icon, value, label]) => (
             <div key={label} className="bg-card rounded-2xl border border-border p-5 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
                 <Icon name={icon} size={22} className="text-primary" />
@@ -100,92 +143,158 @@ export default function Admin() {
           ))}
         </div>
 
-        {/* COURSE LIST */}
-        <div className="bg-card rounded-3xl border border-border overflow-hidden divide-y divide-border">
-          {courses.map((course) => (
-            <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-secondary/30 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl shrink-0">
-                {course.emoji}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{course.title}</div>
-                <div className="text-xs text-muted-foreground flex items-center gap-3 mt-0.5">
-                  <span>{course.category}</span>
-                  <span>{course.lessons} уроков</span>
-                  <span className="text-primary font-semibold">{course.price.toLocaleString('ru')} ₽</span>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setEditing(course)}>
-                <Icon name="Pencil" size={18} />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setConfirmDel(course)}>
-                <Icon name="Trash2" size={18} />
-              </Button>
-            </div>
+        {/* TABS */}
+        <div className="flex gap-2 mb-6">
+          {(['users', 'courses'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                tab === t ? 'bg-primary text-primary-foreground shadow-md' : 'bg-card text-muted-foreground hover:bg-secondary border border-border'
+              }`}
+            >
+              {t === 'users' ? 'Покупатели' : 'Курсы'}
+            </button>
           ))}
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Icon name="Loader2" size={32} className="animate-spin text-primary" />
+          </div>
+        ) : tab === 'users' ? (
+          <>
+            <div className="flex justify-end mb-4">
+              <Button className="gap-2" onClick={() => setNewUserOpen(true)}>
+                <Icon name="UserPlus" size={18} />Добавить покупателя
+              </Button>
+            </div>
+            <div className="bg-card rounded-3xl border border-border overflow-hidden divide-y divide-border">
+              {users.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Icon name="Users" size={36} className="mx-auto mb-3 opacity-40" />
+                  Покупателей пока нет
+                </div>
+              ) : users.map((u) => (
+                <div key={u.id} className="flex items-center gap-4 p-4 hover:bg-secondary/30 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                    <Icon name="User" size={18} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{u.email}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {u.courses_count} курс(ов) · с {new Date(u.created_at).toLocaleDateString('ru')}
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-1 shrink-0" onClick={() => setGrantOpen(u)}>
+                    <Icon name="Unlock" size={15} />Выдать курс
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="bg-card rounded-3xl border border-border overflow-hidden divide-y divide-border">
+            {courses.map((course) => (
+              <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-secondary/30 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl shrink-0">
+                  {course.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{course.title}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-3 mt-0.5">
+                    <span>{course.category}</span>
+                    <span>{course.lessons} уроков</span>
+                    <span className="text-primary font-semibold">{course.price.toLocaleString('ru')} ₽</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
-      {/* EDIT/CREATE MODAL */}
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+      {/* СОЗДАТЬ ПОКУПАТЕЛЯ */}
+      <Dialog open={newUserOpen} onOpenChange={(o) => { setNewUserOpen(o); setNewUserError(''); }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display text-2xl font-semibold">
-              {editing?.id === 0 ? 'Новый курс' : 'Редактировать курс'}
-            </DialogTitle>
+            <DialogTitle className="font-display text-2xl font-semibold">Новый покупатель</DialogTitle>
           </DialogHeader>
-          {editing && (
-            <div className="space-y-4 py-2">
-              <div className="flex gap-3">
-                <div className="w-20">
-                  <Label className="mb-1.5 block">Эмодзи</Label>
-                  <Input value={editing.emoji} onChange={(e) => setEditing({ ...editing, emoji: e.target.value })} className="text-center text-xl" />
-                </div>
-                <div className="flex-1">
-                  <Label className="mb-1.5 block">Название</Label>
-                  <Input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
-                </div>
-              </div>
-              <div>
-                <Label className="mb-1.5 block">Описание</Label>
-                <Textarea value={editing.desc} onChange={(e) => setEditing({ ...editing, desc: e.target.value })} rows={3} />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label className="mb-1.5 block">Категория</Label>
-                  <Input value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} />
-                </div>
-                <div>
-                  <Label className="mb-1.5 block">Цена ₽</Label>
-                  <Input type="number" value={editing.price || ''} onChange={(e) => setEditing({ ...editing, price: +e.target.value })} />
-                </div>
-                <div>
-                  <Label className="mb-1.5 block">Уроков</Label>
-                  <Input type="number" value={editing.lessons || ''} onChange={(e) => setEditing({ ...editing, lessons: +e.target.value })} />
-                </div>
-              </div>
+          <form onSubmit={handleCreateUser} className="space-y-4 py-2">
+            <div>
+              <Label className="mb-1.5 block">Email</Label>
+              <Input
+                type="email"
+                placeholder="buyer@example.com"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                required
+              />
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Отмена</Button>
-            <Button onClick={save} className="gap-2"><Icon name="Check" size={18} />Сохранить</Button>
-          </DialogFooter>
+            <div>
+              <Label className="mb-1.5 block">Пароль</Label>
+              <Input
+                type="text"
+                placeholder="Пароль для покупателя"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                required
+              />
+            </div>
+            {newUserError && (
+              <div className="text-destructive text-sm flex items-center gap-2 bg-destructive/10 px-3 py-2 rounded-lg">
+                <Icon name="AlertCircle" size={15} />{newUserError}
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setNewUserOpen(false)}>Отмена</Button>
+              <Button type="submit" className="gap-2" disabled={newUserLoading}>
+                {newUserLoading ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Check" size={16} />}
+                Создать
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
-      {/* DELETE CONFIRM */}
-      <Dialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
-        <DialogContent className="max-w-sm">
+      {/* ВЫДАТЬ КУРС */}
+      <Dialog open={!!grantOpen} onOpenChange={(o) => { if (!o) { setGrantOpen(null); setGrantMsg(''); setGrantCourse(''); } }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display text-2xl font-semibold">Удалить курс?</DialogTitle>
+            <DialogTitle className="font-display text-2xl font-semibold">Выдать доступ к курсу</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground text-sm">
-            Курс «{confirmDel?.title}» будет удалён. Это действие нельзя отменить.
-          </p>
+          <div className="py-2 space-y-4">
+            <div className="bg-secondary/50 rounded-xl px-4 py-3 text-sm">
+              <span className="text-muted-foreground">Покупатель: </span>
+              <span className="font-medium">{grantOpen?.email}</span>
+            </div>
+            <div>
+              <Label className="mb-1.5 block">Выбрать курс</Label>
+              <select
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm"
+                value={grantCourse}
+                onChange={(e) => setGrantCourse(e.target.value)}
+              >
+                <option value="">— выберите курс —</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.emoji} {c.title}</option>
+                ))}
+              </select>
+            </div>
+            {grantMsg && (
+              <div className={`text-sm flex items-center gap-2 px-3 py-2 rounded-lg ${
+                grantMsg === 'Доступ выдан!' ? 'bg-accent/20 text-accent' : 'bg-destructive/10 text-destructive'
+              }`}>
+                <Icon name={grantMsg === 'Доступ выдан!' ? 'CheckCircle' : 'AlertCircle'} size={15} />
+                {grantMsg}
+              </div>
+            )}
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDel(null)}>Отмена</Button>
-            <Button variant="destructive" onClick={remove} className="gap-2">
-              <Icon name="Trash2" size={18} />Удалить
+            <Button variant="outline" onClick={() => setGrantOpen(null)}>Отмена</Button>
+            <Button onClick={handleGrant} disabled={!grantCourse || grantLoading} className="gap-2">
+              {grantLoading ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Unlock" size={16} />}
+              Выдать доступ
             </Button>
           </DialogFooter>
         </DialogContent>

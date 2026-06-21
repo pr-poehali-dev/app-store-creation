@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS sessions (
+  id VARCHAR(64) PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '30 days'
+)
