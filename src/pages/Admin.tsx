@@ -64,8 +64,8 @@ export default function Admin() {
       <header className="border-b border-border bg-card">
         <div className="container flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl">🧑‍🍳</span>
-            <span className="font-display text-xl font-bold tracking-tight">Готовим с нуля</span>
+            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-9 w-9 object-contain" />
+            <span className="font-display text-xl font-bold tracking-tight">tut_vkusnoru</span>
             <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">Админ</span>
           </Link>
           <Button asChild variant="outline" size="sm" className="gap-2">

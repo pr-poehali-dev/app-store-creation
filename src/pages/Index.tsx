@@ -124,9 +124,9 @@ export default function Index() {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🧑‍🍳</span>
+            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-9 w-9 object-contain" />
             <span className="font-display text-2xl font-bold tracking-tight">
-              Готовим с нуля
+              tut_vkusnoru
             </span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
@@ -358,8 +358,8 @@ export default function Index() {
       <footer className="border-t border-border">
         <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🧑‍🍳</span>
-            <span className="font-display text-lg font-semibold text-foreground">Готовим с нуля</span>
+            <img src="https://cdn.poehali.dev/projects/b90bb00f-1e3a-45a4-a7ca-21f30a40aa0a/bucket/777220e7-3d3a-4bf8-9299-213e40425b77.jpeg" alt="tut_vkusnoru" className="h-7 w-7 object-contain" />
+            <span className="font-display text-lg font-semibold text-foreground">tut_vkusnoru</span>
           </div>
           <span>© 2026 Все права защищены</span>
         </div>
